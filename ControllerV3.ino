@@ -14,11 +14,11 @@
 
 
 #define STEP_PIN_L 26
-#define DIR_PIN_L 27
+#define DIR_PIN_L  27
 
 
-#define STEP_PIN_R 33//14
-#define DIR_PIN_R 25//12
+#define STEP_PIN_R 14
+#define DIR_PIN_R 12
 
 AccelStepper stepperL(AccelStepper::DRIVER,STEP_PIN_L, DIR_PIN_L);
 AccelStepper stepperR(AccelStepper::DRIVER,STEP_PIN_R, DIR_PIN_R);
@@ -36,13 +36,13 @@ volatile unsigned long prevTime = 0, prevMicros = 0;
 
 unsigned long highTime, lowTime, cycleTime;
 float angle;
-double Kp=100, Ki=5, Kd=0.0;
+double Kp=1000, Ki=100, Kd=10;
 
 int stepL = 0;
 int stepR = 0;
 
 void Task1code( void * pvParameters ){
-  // Code for task 1
+  // Code for control
   Serial.begin(9600);
   Wire.begin();
   
@@ -51,11 +51,11 @@ void Task1code( void * pvParameters ){
   Serial.println(status);
   while(status!=0){ } // stop everything if could not connect to MPU6050
   
-  Serial.println(F("Calculating offsets, do not move MPU6050"));
-  delay(1000);
+  //Serial.println(F("Calculating offsets, do not move MPU6050"));
+  //delay(1000);
   // mpu.upsideDownMounting = true; // uncomment this line if the MPU6050 is mounted upside-down
   mpu.calcOffsets(); // gyro and accelero
-  Serial.println("Done!\n");
+  //Serial.println("Done!\n");
 
 
   while (true) {
@@ -65,16 +65,43 @@ void Task1code( void * pvParameters ){
 
     input = mpu.getAngleY();
 
-    dt = (micros() - prevTime);
+    //dt = (micros() - prevTime); dt = 0.002
     error = setpoint - input;
     proportional = Kp * error;
-    integral += Ki * error * dt;
-    integral = constrain(integral, -100, 100);
-    derivative = Kd * (input - prevInput) * 1000000 / dt;
-    output = proportional + integral + derivative;
+    integral += Ki * error;
+    integral = constrain(integral, -3000, 3000);
+    derivative = Kd * (input - prevInput);
+
+    if(abs(input) > 30){
+      output = 0;
+    }
+    else{
+      output = proportional + integral + derivative;
+    }
+    
     
     prevInput = input;
-    prevTime = micros();
+    //prevTime = micros();
+    //Serial.print("Input:");
+    //Serial.print("\t");
+    //Serial.print(input);
+    
+    //Serial.print("\tOutput:");
+    //Serial.print("\t");
+    //Serial.print(output);
+    
+    //Serial.print("\tProp:");
+    //Serial.print("\t");
+    //Serial.print(proportional);
+    
+    //Serial.print("\tInt:");
+    //Serial.print("\t");
+    //Serial.print(integral);
+    
+    //Serial.print("\tDeriv:");
+    //Serial.print("\t");
+    //Serial.println(derivative);
+       
 
     
     delay(1);
@@ -88,11 +115,17 @@ void Task1code( void * pvParameters ){
 void setup() {
   //Serial.begin(9600);
   
-  stepperL.setMaxSpeed(1000);     // Maximum speed in steps per second
-  stepperL.setAcceleration(200);  // Acceleration in steps per second^2
+  stepperL.setMaxSpeed(32000);     // Maximum speed in steps per second
+  stepperL.setAcceleration(8000);  // Acceleration in steps per second^2
   
-  stepperR.setMaxSpeed(1000);     // Maximum speed in steps per second
-  stepperR.setAcceleration(200);  // Acceleration in steps per second^2
+  stepperR.setMaxSpeed(15000);     // Maximum speed in steps per second
+  stepperR.setAcceleration(8000);  // Acceleration in steps per second^2
+
+  pinMode(33, OUTPUT);
+  pinMode(32, OUTPUT);
+
+  digitalWrite(33, HIGH);
+  digitalWrite(32, HIGH);
 
  xTaskCreatePinnedToCore(
                     Task1code,   /* Task function. */
@@ -106,17 +139,9 @@ void setup() {
 }
 
 void loop() {
-  //highTime = pulseIn(33, HIGH);
-  //lowTime = pulseIn(33, LOW);
-  //cycleTime = highTime + lowTime;
-  //if(cycleTime != 0){
-    //input = ((highTime*255) / cycleTime)-128;
-  //}
-  //else{
-    //Serial.println("ERROR");
-  //}
 
-  if(abs(output) < 200){
+
+  if(abs(output) < 150){
     output = 0;
   }
 
@@ -126,16 +151,7 @@ void loop() {
 
   stepperL.runSpeed();
   stepperR.runSpeed();
-  //Serial.println(xPortGetCoreID());
-
-  //Serial.print("Input: ");
-  //Serial.print(input);
-  //Serial.print("\t Output: ");
-  //Serial.println(output);
 
 
 
-  //if(input < 35 && input > -35){
-
-  //}
 }
