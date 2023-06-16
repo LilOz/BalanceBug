@@ -21,7 +21,7 @@ AccelStepper stepperR(AccelStepper::DRIVER,STEP_PIN_R, DIR_PIN_R);
 
 
 
-double Kp=1000, Ki=20, Kd=200; // PID VALUES
+double Kp=900, Ki=20, Kd=200; // PID VALUES
 
 volatile int control=1;
 volatile double setpoint = 0,input = 0, output = 0, prevInput = 0, integral = 0, derivative = 0, del = 0, dt = 0, error, proportional, offset = 0;
@@ -30,7 +30,7 @@ void Task1code( void * pvParameters ){ // Core 0 code
   // Code for control
   Serial.begin(9600);
   Wire.begin();
-
+  unsigned long timer=0;
    
   byte status = mpu.begin();
   Serial.print(F("MPU6050 status: "));
@@ -47,14 +47,32 @@ void Task1code( void * pvParameters ){ // Core 0 code
     mpu.update();             //Get new gyro angle
     input = mpu.getAngleY();
 
+    if(millis() - timer > 5000){
+      switch (control){
+        case 0:
+          control = 1;
+          break;
+        case 1:
+          control = 2;
+          break;
+        case 2:
+          control = 0;
+          break;
+        default:
+          control = 0;
+          break;
+      }
+      timer = millis();
+    }
+
     if(control == 0){
       setpoint = 0;
     }
     if(control == 1){
-      setpoint = 3;
+      setpoint = 5;
     }
     if(control == 2){
-      setpoint = -3;
+      setpoint = -5;
     }
     if(control == 3){
       setpoint = 0;
@@ -103,7 +121,7 @@ void Task1code( void * pvParameters ){ // Core 0 code
 //       
 
 
-   vTaskDelay(5);
+   vTaskDelay(1);
   }
 }
 
@@ -113,10 +131,10 @@ void setup() {
   //Serial.begin(9600);
   
   stepperL.setMaxSpeed(32000);     // Maximum speed in steps per second
-  stepperL.setAcceleration(8000);  // Acceleration in steps per second^2
+  stepperL.setAcceleration(16000);  // Acceleration in steps per second^2
   
-  stepperR.setMaxSpeed(15000);     // Maximum speed in steps per second
-  stepperR.setAcceleration(8000);  // Acceleration in steps per second^2
+  stepperR.setMaxSpeed(32000);     // Maximum speed in steps per second
+  stepperR.setAcceleration(16000);  // Acceleration in steps per second^2
 
 
 
@@ -142,16 +160,18 @@ void loop() {
   
   
   
-  if(abs(input) > 20){
+  if(abs(input) > 27){
       output = 0;
       offset = 0;
    }
 
-  stepperL.setSpeed(-output + offset);
-  stepperR.setSpeed(output + offset);
+  stepperL.setSpeed(-output);
+  stepperR.setSpeed(output);
 
   stepperL.runSpeed();
   stepperR.runSpeed();
+
+  //Serial.println(output);
   
 
 
