@@ -319,17 +319,17 @@ always@(posedge clk) begin
 	//////////////////////////////////////////////////////////////////////////////////////
 	
 	//Red Detection
-	if (average_R >= CROSSHAIR_L && average_R <= CROSSHAIR_R && R_x_max != 0) 	R_found <= 8'h01;
-	else 																								R_found <= 8'h00;
+	if (average_R >= CROSSHAIR_L && average_R <= CROSSHAIR_R && R_x_max != 0 && R_BB_Height > 100) 	R_found <= 8'h01;
+	else 																															R_found <= 8'h00;
 	
 	//Yellow Detection
 	if (average_Y >= CROSSHAIR_L && average_Y <= CROSSHAIR_R && 
-		(right_Y >= right_R && top_Y <= top_R) && Y_x_max != 0) 						Y_found <= 8'h01;
-	else																								Y_found <= 8'h00;
+		(right_Y >= right_R && top_Y <= top_R) && Y_x_max != 0 && Y_BB_Height > 100) 						Y_found <= 8'h01;
+	else																															Y_found <= 8'h00;
 
 	//Blue Detection
-	if (average_B >= CROSSHAIR_L && average_B <= CROSSHAIR_R && B_x_max != 0) 	B_found <= 8'h01;
-	else 																								B_found <= 8'h00;
+	if (average_B >= CROSSHAIR_L && average_B <= CROSSHAIR_R && B_x_max != 0 && B_BB_Height > 100) 	B_found <= 8'h01;
+	else 																															B_found <= 8'h00;
 	
 	//////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////
